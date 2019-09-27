@@ -1,0 +1,16 @@
+{
+	"name": "NodeJs",
+	"version": "0.0.1",
+	"private": "true",
+	"dependencies": {
+		"bcryptjs": "^2.4.3",
+		"body-parser": "^1.19.0",
+		"brcypt": "^1.0.1",
+		"express": "*",
+		"jsonwebtoken": "^8.5.1",
+		"mongodb": "^2.2.33",
+		"mongoose": "^5.7.1",
+		"request": "^2.88.0",
+		"socket.io": "*"
+	}
+}
