@@ -1,4 +1,4 @@
-﻿var express=require('express');
+var express=require('express');
 var app=express();
 var mongodb=require('mongodb');
 var bodyParser = require('body-parser');// dung khai bao de doc res.body
@@ -12,8 +12,7 @@ app.use(bodyParser.json());
 // khai bao database
 var MongoClient=mongodb.MongoClient;
 MongoClient.connect(
-	'mongodb://localhost/Android_Lab',      // connect local
-    //'mongodb+srv://Admin:androidlab123@android-lab-7mcp8.mongodb.net/test?retryWrites=true&w=majority', 
+	'mongodb://localhost/Android_Lab',      // connect local 
 	function (err,db) 
 	{
 		if (err) console.log("Unable to connect")
@@ -38,6 +37,9 @@ MongoClient.connect(
                     //var hashedPassword = brcypt.hashSync(req.body.password, 8);
                     //acc.password = hashedPassword;
                     // insert
+                    acc.role = "khachhang";
+                    var date = new Date();
+                    acc.date = (date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear() + " @ " + date.getHours() + ":" + date.getMinutes()).toString();
 					collection.insert(acc,(function(err,reslute)  
 					{
 						if (err) 
@@ -141,7 +143,7 @@ MongoClient.connect(
 								{
 									token: token,
 									success:"true",
-									name: 'login',
+									name: 'login with token',
 									errorMessage: err,
 									username:req.body.username,
 									account:resl[0]
@@ -155,10 +157,70 @@ MongoClient.connect(
 				}
 			});
 			
-		}); 
+        }); 
+        // thay doi mat khau, gui len username, password, passwordchange
+        app.post('/user/changepassword', function (req, res) {
+            var request = req.body;
+            collection.find({ username: request.username, password: request.password }).toArray(function (err1, resl)
+            {
+                if (Array.isArray(resl) && (resl.length == 0))
+                    res.status(401).send('Wrong Password')
+                else {
+                    if (request.passwordchange == null) res.status(401).send('Password not null')
+                    else {
+
+                        collection.update({ username: request.username, password: request.password },
+                            { $set: { password: request.passwordchange } }, function (err2, reslt)
+                            {
+                                if (err2) throw err2;
+                                res.status(200).send("password updated");
+                            })
+                    }
+                }
+            })
+        });
+        // them quyen nhan vien cho user. chi co admin moi co quyen nang cap user tu khach hang len nhanvien. Gui len user Admin va username nang cap
+        app.post('/user/upgraderole', function (req, res) {
+            var acc = req.body;
+            collection.find({ username: acc.username }).toArray(function (err, docs) {
+                if (Array.isArray(docs) && docs.length != 0)     // tim thay
+                {
+                    // add vao database
+                    if (docs[0].role == "Admin") {
+                        collection.find({ username: acc.usernameupdate }).toArray(function (err1, resl) {
+                            if (Array.isArray(resl) && resl.length == 0) res.status(401).send("Find not found " + acc.usernameupdate);
+                            else {
+                                if (resl[0].role == "nhanvien") res.status(401).send("User " + resl[0].username + "da la nhan vien ");
+                                else 
+                                collection.update({ username: acc.usernameupdate }, { $set: { role: "nhanvien" } }, function (err2, reslt) {
+                                    if (err2) res.status(401).send(err2);
+                                    res.status(200).send("Upgrade seccess");
+                                })
+                            }
+                        });
+                    }
+                    else res.status(401).send("Permission error. You need login with account Administrator ");
+                }
+                else res.status(401).send("User not found");
+            })
+        })
+        // in ra danh sach tat ca cac user gom thong tin username, role. Chi co admin moi co quyen in
+        app.get('/user/finduser', function (req, res) {
+            collection.find({ username: req.body.username }).toArray(function (err, docs) {
+                if (Array.isArray(docs) && docs.length != 0)     // tim thay
+                {
+                    // kiem tra admin, chi co admin moi co quyen xuat thong tin user
+                    if (docs[0].role == "Admin") {
+                        collection.find({}, { _id: 0, username: 1, role: 1 }).toArray(function (err1, resl) {
+                            if (err1) res.status(401).send(err1);
+                            res.status(200).send(resl);
+                        }); // tuong lai se find xuat them anh dai dien
+                    }
+                    else res.status(401).send("Permission error. You need login with account Administrator ");
+                }
+                else res.status(401).send("User not found");
+            })
+        })
 	});
 var server=app.listen(1111);
 
-// ý tưởng gửi và nhận pass
-// lúc khởi tạo tài khoản client send pass lên, server nhận pass, băm pass rồi lưu vào database
-// lúc login, client gửi pass đã băm lên server, server kiểm tra pass đã băm với pass trong database
