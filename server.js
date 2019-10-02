@@ -279,6 +279,64 @@ MongoClient.connect(
                 })
             }
         })
-	});
+	// dang bi loi Email khong cho su dung http dang nhap
+        app.post('/user/forgotpassword', function (req, res)
+        {
+            collection.find({ username: req.body.username }).toArray(function (err, docs) {
+                if (Array.isArray(docs) && docs.length != 0)  // tim thay
+                {
+                    if (docs[0].email === undefined) res.status(401).send("Username: " + req.body.username + " chua cap nhat dia chi email");
+                    var accmail = 'partyuitk11@gmail.com';
+                    var passmail = 'partyuit123';
+                    var smtptransport = nodemailer.createTransport({
+                        service: 'Gmail',
+                        auth: {
+                            user: accmail, // user password email de dang nhap va gui 
+                            pass: passmail
+                        }
+                    })
+                    var token = jwt.sign({ email: req.body.email }, config.secret, {
+                        expiresIn: '1h'
+                    });
+                    var data = {
+                        from: accmail,
+                        to: docs[0].email,
+                        subject: "Reset Password",
+                        context: {
+                            url: 'http://localhost:3000/user/forgotpasswordcheck?token=' + token,
+                            name: docs[0].username
+                        }
+                    };
+                    smtptransport.sendMail(data, function (err) {
+                        if (err) res.status(401).send("Error: " + err);
+                        res.status(200).send("Please check your email");
+                    })
+                }
+                else res.status(401).send("Find not found username: " + req.body.username);
+            })
+        })
+        app.post('/user/forgotpasswordcheck', function (req, res)
+        {
+            if (req.headers && req.headers.authorization) {
+                var token = req.headers.authorization;      // doc gia tri token
+                if (!token)
+                    return res.status(403).send({ auth: false, message: 'No token provided.' });
+                jwt.verify(token, config.secret, function (err, decoded) {  // gia ma token thanh decoded la obj
+                    if (err)
+                        return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+                    // sau khi giai ma token ta duoc ten username. tim username trong database de response
+                    collection.find({ email: decoded.email }).toArray(function (err, docs) {
+                        if (Array.isArray(docs) && docs.length != 0) {
+                            collection.update({ username: docs[0].username },
+                                { $set: { password: req.body.passnew } }, function (err2, reslt) {
+                                    if (err2) throw err2;
+                                    res.status(200).send("Password updated");
+                                });
+                        }
+                    })
+                })
+            }
+        })
+});
 var server=app.listen(1111);
 
