@@ -221,6 +221,64 @@ MongoClient.connect(
                 else res.status(401).send("User not found");
             })
         })
+	app.post('/user/uploadimage', function (req, res) {
+            if (req.headers && req.headers.authorization) {
+                var token = req.headers.authorization;      // doc gia tri token
+                if (!token)
+                    return res.status(403).send({ auth: false, message: 'No token provided.' });
+                jwt.verify(token, config.secret, function (err, decoded) {  // gia ma token thanh decoded la obj
+                    if (err)
+                        return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+                    // sau khi giai ma token ta duoc ten username. tim username trong database de response
+                    collection.find({ username: decoded.username }).toArray(function (err, docs) {
+                        if (Array.isArray(docs) && docs.length != 0) {
+                            let formidable = require('formidable');
+                            var form = new formidable.IncomingForm();
+                            form.uploadDir = "./uploads";   // thu muc luu
+                            form.keepExtensions = true;     // duoi file
+                            form.maxFieldsSize = 10 * 1024 * 1024;  // kich thuoc
+                            form.multiples = false; //cho phep gui nhieu file
+
+                            form.parse(req, function (err2, fields, files) {
+                                if (files.image === undefined || files.image === null) res.status(401).send("No image to upload");
+
+                                if (err2) {
+                                    res.status(401).send("Cannot upload image. Error is " + err2);
+                                }
+                                let url = files.image.path;
+                                collection.update({ username: docs[0].username }, { $set: { imageurl: url } }, function (err3, reslt) {
+                                    if (err3) res.status(401).send(err3);
+                                    else res.status(200).send("Upload Image Successfully");
+                                });
+                            });
+                        }
+                    });
+
+                });
+                    }
+            })
+        app.get('/user/openimage', function (req, res)
+        {
+            if (req.headers && req.headers.authorization) {
+                var token = req.headers.authorization;      // doc gia tri token
+                if (!token)
+                    return res.status(403).send({ auth: false, message: 'No token provided.' });
+                jwt.verify(token, config.secret, function (err, decoded) {  // gia ma token thanh decoded la obj
+                    if (err)
+                        return res.status(500).send({ auth: false, message: 'Failed to authenticate token.' });
+                    // sau khi giai ma token ta duoc ten username. tim username trong database de response
+                    collection.find({ username: decoded.username }).toArray(function (err, docs) {
+                        if (Array.isArray(docs) && docs.length != 0) {
+                            fs.readFile(docs[0].imageurl, function (err, imagedata) {
+                                if (err) res.status(401).send("Cannot read image. Error: " + err);
+                                res.writeHead(200, { 'Content-Type': 'image/jpeg' });
+                                res.end(imagedata);
+                            })
+                        }
+                    })
+                })
+            }
+        })
 	});
 var server=app.listen(1111);
 
