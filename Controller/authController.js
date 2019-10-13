@@ -293,3 +293,4 @@ exports.getreset = function(req, res){
 			
 		});
 };
+console.log("Nguyen Tan Hao ");
