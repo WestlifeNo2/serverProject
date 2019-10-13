@@ -21,8 +21,8 @@ mongoose.connect(url, {useNewUrlParser: true}).then(function(){
 	process.exit();
 });
 
-require("./accountRoutes.js")(app);
-require("./authRoutes.js")(app);
+require("../Routes/accountRoutes.js")(app);
+require("../Routes/authRoutes.js")(app);
 
 // Listen request 
 
