@@ -10,7 +10,7 @@ class Status{
 
 	}
 
-	unathorized(codeNumber, message){
+	unauthorized(codeNumber, message){
 		return this.get(false, CODE.UNAUTHORIZED, codeNumber || 400, message || "Unauthorized User");
 	}
 

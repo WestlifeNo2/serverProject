@@ -1,5 +1,6 @@
 module.exports = function(app){
-	var account = require("./accountController.js");
+	var account = require("../Controller/accountController.js");
+	var auth = require("../Controller/authController.js");
 
 	//create Account
 	app.post("/createAccount", account.create);
@@ -11,11 +12,11 @@ module.exports = function(app){
 	app.get("/findAll", account.findAll);
 
 	// update
-	app.put("/update", account.update);
+	app.post("/update", auth.isAuthenticated, account.update);
 
 	// delete 
 	app.delete("/delete", account.delete);
 
 	// change Password
-	app.put("/changePassword", account.changePassword);
+	app.post("/changePassword", account.changePassword);
 };

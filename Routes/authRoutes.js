@@ -7,12 +7,12 @@ module.exports = function(app){
 	// Logout
 	app.post("/logout", auth.isAuthenticated, auth.logout);
 
-	//Token
-	//app.post("/token", auth().token);
-
-	//Forgot password 
+	/*//Forgot password 
 	app.post("/forgot", auth.forgot);
+
 	app.get("/getreset", auth.reset);
-	app.post("/reset", auth.resetToken);
+
+	app.post("/reset", auth.resetPassword);*/
+
 
 };

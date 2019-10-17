@@ -10,6 +10,7 @@ var passport = require("passport");
 var nodemailer = require("nodemailer");
 var crypto = require("crypto");
 var async = require("async");
+var bcrypt = require("bcrypt");
 
 //Login 
 exports.login = function (req,res){
@@ -74,6 +75,7 @@ exports.logout = function(req, res){
 	if (req.account){
 		req.account.refreshToken = undefined; 
 		req.account.createdTimeToken = undefined;
+		req.account.token = undefined;
 		req.account.save(function(err, newAccount){
 			if (err){
 				let responseClient = jsonGenerator.status.updateError();
@@ -98,8 +100,8 @@ exports.logout = function(req, res){
 
 //isAuthenticated to check token 
 exports.isAuthenticated = function(req, res, next){
-	if (req.headers && req.headers.authorization && req.headers.authorization.split(' ')[0] === 'JWT'){
-		let jwtToken = req.headers.authorization.split(' ')[1];
+	if (req.headers && req.headers.authorization){
+		let jwtToken = req.headers.authorization;
 		jwt.verify(jwtToken, Config.jwtSecret, function(err, payload){
 			if (err){
 				let responseClient = jsonGenerator.status.unauthorized();
@@ -116,16 +118,16 @@ exports.isAuthenticated = function(req, res, next){
 				}
 
 				// get user
-				let username = payload.userName;
+				//let username = payload.userName;
 
-				account.findOne({userName: username}, function(err, account){
-					if (account && account.createdTimeToken === createdTime.toString()){
+				account.findOne({token: req.headers.authorization}, function(err, account){
+					if (account){
 						req.account = account;
 						next();
 					}
 					else {
 						let responseClient = jsonGenerator.status.unauthorized();
-						res.json(responseClient);
+						 return res.json(responseClient);
 					}
 				});
 
@@ -202,7 +204,7 @@ exports.forgot = function(req, res, next){
 // Get reset password token 
 exports.reset = function(req, res,){
 	account.findOne({resetPasswordToken: req.params.token, resetPasswordExpires: {$gt: Date.now()} }, function(err, account){
-		if (!user){
+		if (!account){
 			let reponseClient = jsonGenerator.status.userNotExsited();
 			return res.json(responseClient);
 		}
