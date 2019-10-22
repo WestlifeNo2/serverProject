@@ -3,8 +3,8 @@ var bodyParser = require("body-parser");
 var mongoose = require ("mongoose");
 var app = express();
 
-app.use(bodyParser.urlencoded({extended: true}))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.json());
 // Routing 
 app.get("/", function (req, res){
 	res.json("Welcome");
@@ -15,12 +15,12 @@ mongoose.Promise = global.Promise;
 
 // Connect MongoDB database 
 mongoose.connect(url, {useNewUrlParser: true}).then(function(){
-	console.log("Successfully connected to the databse");
+	console.log("Successfully connected to the database");
 }).catch (function(err) {
-	console.log("Could not connect to the databse. Exiting now ", err)
+	console.log("Could not connect to the database. Exiting now ", err)
 	process.exit();
 });
-
+app.use(express.static("./Uploads"))
 require("./Routes/accountRoutes.js")(app);
 require("./Routes/authRoutes.js")(app);
 

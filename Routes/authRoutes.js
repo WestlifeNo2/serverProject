@@ -2,17 +2,17 @@ module.exports = function(app){
 	var auth = require("../Controller/authController.js");
 
 	//Login 
-	app.post("/login", auth.login);
+	app.post("/user/signin", auth.login);
 
 	// Logout
-	app.post("/logout", auth.isAuthenticated, auth.logout);
+	app.post("/user/signout", auth.isAuthenticated, auth.logout);
 
-	/*//Forgot password 
-	app.post("/forgot", auth.forgot);
+	//Forgot password 
+	app.post("/user/resetpassword", auth.forgot);
 
 	app.get("/getreset", auth.reset);
 
-	app.post("/reset", auth.resetPassword);*/
+	app.post("/user/resetconfirm", auth.resetConfirm);
 
 
 };

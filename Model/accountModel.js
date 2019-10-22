@@ -2,6 +2,7 @@ var mongoose = require("mongoose");
 var validator = require("validator");
 var jwt = require("jsonwebtoken");
 var bcrypt = require("bcrypt");
+var day = new Date();
 var createAccount = mongoose.Schema({
 	fullName: String,
 	userName: { type: String,
@@ -12,15 +13,14 @@ var createAccount = mongoose.Schema({
 			unique: true},
 	phoneNumber: String,
 	password: { type: String, required: true},
-	newpassword: String,
 	role: {type: String, default: "Khach Hang"},
-	created_date: String,
-	update_date: String,
 	token: String,
 	createdTimeToken: String,
 	refreshToken: String,
-	resetPasswordToken: String,
-	resetPasswordExpire: String
+	resetPasswordPIN: String,
+	resetPasswordExpire: String,
+	imageUrl: String,
+	createdAt: {type : String, default: undefined}
 });
 
 createAccount.methods.comparePassword = function(passwordCompare){

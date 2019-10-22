@@ -121,17 +121,6 @@ exports.delete = function(req,res){
   })
 };
 
-/*exports.login = function(req,res){
-  account.findOne({userName: req.body.userName, password: req.body.password}).then(function(account){
-    if(!account){
-      return res.json("Account not existed, please register a new one");
-    }
-    res.json("Login successfully");
-  }).catch(function(err){
-    if (err) {
-      res.json("Some errors occured");
-    }
-  });
-}; */
+
 
 

@@ -27,7 +27,7 @@ exports.login = function (req,res){
 
 	account.findOne({userName: req.body.userName}, function(err, account){
 		if (!account){
-			let responseClient = jsonGenerator.status.userExsited();
+			let responseClient = jsonGenerator.status.userNotExsited();
 			return res.json(responseClient);
 		}
 		else {
@@ -82,19 +82,13 @@ exports.logout = function(req, res){
 				return res.json(responseClient);
 			}
 
-			let responseAccount = new response({
-				success : true,
-				name: "Logout",
-				errorMessage: "null",
-				userName: req.account.userName,
-				Account: req.account
-			});
-			return res.json(responseAccount);
+			let responseClient = jsonGenerator.status.success(200, "Sign out succeeded");
+			return res.status(200).json(responseAccount);
 		});
 	}
 	else {
 			let responseClient = jsonGenerator.status.error();
-			return res.json(responseClient);
+			return res.status(400).json(responseClient);
 		}
 };
 
@@ -146,7 +140,7 @@ exports.isAuthenticated = function(req, res, next){
 exports.forgot = function(req, res, next){
 	async.waterfall([
 		function(done){
-			crypto.randomBytes(20, function(err, buff){
+			crypto.randomBytes(6, function(err, buff){
 				var token = buff.toString('hex');
 				done(err, token);
 			});
@@ -157,7 +151,7 @@ exports.forgot = function(req, res, next){
 					let responseClient = jsonGenerator.status.emailNotExsited();
 					return res.json(responseClient);
 				}
-				account.resetPasswordToken = token;
+				account.resetPasswordPIN = token;
 				account.resetPasswordExpire = Date.now() + 3600000;
 				account.save(function(err){
 					done(err, token, account);
@@ -169,17 +163,18 @@ exports.forgot = function(req, res, next){
 			var smtpTransport = nodemailer.createTransport({
 				service: "Gmail",
 				auth: {
-					user: "nguyentanhao2013@gmail.com",
-					pass: "01668679880"
+					user: "partyuitk11@gmail.com",
+					pass: "partyuit123"
 				}
 			});
+			
 			var mailOptions = {
 				to: account.email,
-				from: "nguyentanhao2013@gmail.com",
+				from: "partyuitk11@gmail.com",
 				subject: "Party Booking Password Reset",
 				text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
-          'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-          'http://' + req.headers.host + '/reset/' + token + '\n\n' +
+          'Please enter the code, or paste this into your reset password form to complete the process:\n\n' 
+           + token + '\n\n' + 
           'If you did not request this, please ignore this email and your password will remain unchanged.\n'
 			};
 			smtpTransport.sendMail(mailOptions, function(err){
@@ -187,7 +182,6 @@ exports.forgot = function(req, res, next){
 				let responseClient = new response({
 					success: true,
 					name: "Get account token reset password",
-					username: account.email,
 					Account: account
 				});
 				return res.json(responseClient);
@@ -213,7 +207,6 @@ exports.reset = function(req, res,){
 				success: true,
 				name: "Get account token reset password",
 				errorMessage: "null",
-				username: account.userName,
 				Account: account
 			});
 			return res.json(responseClient);
@@ -221,16 +214,16 @@ exports.reset = function(req, res,){
 	});
 };
 
-exports.getreset = function(req, res){
+exports.resetConfirm = function(req, res){
 	async.waterfall([
 		function(done){
-			account.findOne({resetPasswordToken: req.body.token, resetPasswordExpire: {$gt: Date.now()} }, function(err, account){
-				if(!user){
+			account.findOne({resetPasswordPIN: req.body.resetPasswordPin, resetPasswordExpire: {$gt: Date.now()} }, function(err, account){
+				if(!account){
 					let responseClient = jsonGenerator.status.userNotExsited();
 					return res.json(responseClient);
 				}
-				if (req.body.password === req.body.confirm){
-					bcrypt.hash(req.body.confirm, 10, function(err, hash){
+				if (req.body.password){
+					bcrypt.hash(req.body.password, 10, function(err, hash){
 						if (err){
 							let responseClient = jsonGenerator.status.error();
 							return res.json(responseClient);
@@ -238,7 +231,7 @@ exports.getreset = function(req, res){
 						}
 						else {
 							account.password = hash;
-							account.resetPasswordToken = undefined;
+							account.resetPasswordPIN = undefined;
 							account.resetPasswordExpire = undefined;
 							account.save(function(err, account){
 								if (err){
@@ -249,8 +242,6 @@ exports.getreset = function(req, res){
 									let responseClient = new response({
 										success: true,
 										name: "Change password",
-										errorMessage: "null",
-										username: account.userName,
 										Account: account
 									});
 									return res.json(responseClient);
@@ -270,13 +261,13 @@ exports.getreset = function(req, res){
 			var smtpTransport = nodemailer.createTransport({
 				service: "Gmail",
 				auth:{
-					user: "nguyentanhao2013@gmail.com",
-					pass: "01668679880"
+					user: "tanhaon7@gmail.com",
+					pass: "Hao123456"
 				}
 			});
 			var mailOptions = {
 				to: account.email,
-				from: "nguyentanhao2013@gmail.com",
+				from: "tanhaon7@gmail.com",
 				subject: "Your password has been changed",
 				text: 'Hello,\n\n' +
           'This is a confirmation that the password for your account ' + account.email + ' has just been changed.\n'

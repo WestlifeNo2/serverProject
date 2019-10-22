@@ -6,7 +6,7 @@ var Response = mongoose.Schema ({
 	success: {type: Boolean, default: false},
 	name: String,
 	errorMessage: String,
-	username: String,
+	updatedAt: {type: String, default: undefined},
 	Account: {type: mongoose.Schema.Types.ObjectId, ref: 'account'}
 });
 module.exports = mongoose.model("response", Response);

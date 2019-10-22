@@ -39,7 +39,7 @@ class Status{
 		return this.get(false, CODE.USER_EXSITED, codeNumber || 401, message || "User exsited");
 	}
 
-	userNotExsited(codeNumer, message){
+	userNotExsited(codeNumber, message){
 		return this.get(false, CODE.USER_NOT_EXSITED, codeNumber || 401, message || "User not exsited");
 	}
 

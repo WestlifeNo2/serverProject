@@ -3,60 +3,73 @@ var bcrypt = require("bcrypt");
 var response = require("../Model/responseModel.js");
 var CODE =  require("../Helper/statusCode.js");
 var jsonGenerator = require("../Helper/jsonGenerator.js");
+var day = new Date();
+var path = require("path");
+//var multer = require("multer");
 // Create and save account
 exports.create = function(req,res){
   if (!req.body) {
     return res.status(401).json("account content can not be empty");
   }
+
   account.findOne({userName: req.body.userName}, function(err, newAccount){
-    if (newAccount != null) {
-      var newAccount = new account(req.body);
-      var responseAccount = new response({
-        name : "addUser",
-        errorMessage : "User existed",
-        username : req.body.userName,
-        Account : newAccount});
-      return res.status(401).json(responseAccount);
+    if (newAccount) {
+      let responseClient = jsonGenerator.status.userExsited();
+      return res.status(401).json(responseClient);
     }
+    else if (err) {
+      let responseClient = jsonGenerator.status.error();
+      return res.status(400).json(responseClient);
+    }
+    else {
+      account.findOne({email: req.body.email}, function(err, account){
+    if (err){
+      let responseClient = jsonGenerator.status.error();
+      return res.status(400).json(responseClient);    
+    }
+    else {
+      if (account){
+        let responseClient = jsonGenerator.status.emailExsited();
+        return res.status(401).json(responseClient);
+      }
+    }
+  });
+    }
+    });
+
     //Hash password
     bcrypt.hash(req.body.password, 10, function (err, hash){
     if (err) {
-      res.json("error");
+      let responseClient = jsonGenerator.status.error();
+      return res.status(400).json(responseClient);
     }
     // Create a new account with password hashed
   var newAccount = new account(req.body);
-
+    newAccount.createdAt = day.getFullYear() + "-" + day.getMonth() + "-" + day.getDate() + " " + day.getHours() + ":" + day.getMinutes();
     newAccount.password = hash;
      // Save account into the database 
     newAccount.save().then(function (data){
-      var responseAccount = new response({
+      var responseClient = new response({
         success: true,
         name: "addUser",
-        errorMessage: "null",
-        username: req.body.userName,
-        Account: newAccount
+        Account: data
       });
-    res.status(200).json(responseAccount);
-  }).catch (function (err){
-    if(err){
-    res.status(400).json("Some errors occured");
-  }
-});
+    return res.status(200).json(responseClient);
+  })
 
   });
-    });
 
-  
 };
 
 // Retrieve and return all accounts from database 
 exports.findAll = function(req,res){
 
   account.find().then(function(account){
-    res.json(account);
+    return res.json(account);
   }).catch(function(err){
     if (err){
-      res.json("Some errors occured");
+      let responseClient = jsonGenerator.status.error();
+       return res.status(400).json(responseClient);
     }
   });
 
@@ -66,13 +79,20 @@ exports.findAll = function(req,res){
 exports.findOne = function(req,res){
   account.findOne({userName: req.body.userName}, function(err, account){
     if (!account){
-      res.status(401).json("Account not exsited");
+      let responseClient = jsonGenerator.status.userNotExsited();
+      return res.json(responseClient);
     }
     else {
       if (err){
-        res.status(401).json("Some errors occured");
+        let responseClient = jsonGenerator.status.error();
+        return res.status(400).json(responseClient);
       }
-      res.json(account);
+      let responseClient = new response({
+        success: true,
+        name: "find one user",
+        Account: account
+      });
+      return res.status(200).json(responseClient);
     }
   })
 };
@@ -80,20 +100,30 @@ exports.findOne = function(req,res){
 //Update account identified by the name in the request (Not update password)
 exports.update = function(req,res){
   if (!req.body){
-    return res.json("Content cannot be empty");
+    return res.status(400).json("Content cannot be empty");
   }
 
   // Find accout and update it with the request body 
   account.findOneAndUpdate({userName: req.body.userName}, req.body, {new: true}, function(err, account){
     if (!account){
-      return res.status(401).json("Account not existed");
+      let responseClient = jsonGenerator.status.userNotExsited();
+      return res.status(401).json(responseClient);
     }
     else {
       if (err){
-        return res.status(401).json("Some error occured");
+        let responseClient = jsonGenerator.status.error();
+        return res.status(401).json(responseClient);
       }
       else {
-        return res.status(200).json("Account updated");
+        let responseClient = new response({
+          success: true,
+          name: "update",
+          errorMessage: "null",
+          updatedAt: day.getFullYear() + "-" + day.getMonth() + "-" + day.getDate() + " " + day.getHours() + ":" + day.getMinutes(),
+          Account: account
+        });
+        return res.status(200).json(responseClient);
+        
       }
     }
   });
@@ -101,16 +131,19 @@ exports.update = function(req,res){
 
 // Delete account with the speicified userName in the request 
 exports.delete = function(req,res){
-  account.findOneAndDelete({userName: req.body.userName}, function(err, account){
+  account.findOneAndDelete({userName: req.account.userName}, function(err, account){
     if (!account){
-      return res.status(401).json("Account not existed");
+      let responseClient = jsonGenerator.status.userNotExsited();
+      return res.status(401).json(responseClient);
     }
     else {
       if (err){
-        return res.status(401).json("Some error occured");
+        let responseClient = jsonGenerator.status.error();
+        return res.status(400).json(responseClient);
       }
       else {
-        return res.status(200).json("Account deleted");
+        let responseClient = jsonGenerator.status.success();
+        return res.status(200).json(responseClient);
       }
     }
   });
@@ -118,35 +151,29 @@ exports.delete = function(req,res){
 
 // Change password 
 exports.changePassword = function(req,res){
-  account.findOne({userName: req.body.userName}, function(err, account){
+  account.findOne({userName: req.account.userName}, function(err, account){
     if (err){
       let responseClient = jsonGenerator.status.error();
-      return res.json(responseClient);
+      return res.status(400).json(responseClient);
     }
     else {
       if (account){
-         bcrypt.hash(req.body.newPassword, 10, function(err, hash){
+         bcrypt.hash(req.body.newpassword, 10, function(err, hash){
           if (err){
             let responseClient = jsonGenerator.status.error();
-            return res.json(responseClient);
+            return res.status(400).json(responseClient);
           }
           else {
             account.password = hash; 
             account.save(function(err, data){
               if (err){
                 let responseClient = jsonGenerator.status.updateError();
-                return res.json(responseClient);
+                return res.status(401).json(responseClient);
               }
               else {
-                let responseClient = new response({
-                  success: true,
-                  name: "changePassword",
-                  errorMessage: "null",
-                  username: req.body.userName,
-                  Account: data
+                let responseClient = jsonGenerator.status.success(200, "Password Updated");
 
-                });
-                return res.json(responseClient);
+                return res.status(200).json(responseClient);
               }
             });
 
@@ -156,10 +183,54 @@ exports.changePassword = function(req,res){
       }
       else {
         let responseClient = jsonGenerator.status.userNotExsited();
-        return res.json(responseClient);
+        return res.status(401).json(responseClient);
       }
     }
   });
-;}
+};
 
+exports.avatar = function (req, res){
+  let originalname = req.file.originalname; 
+  account.findOneAndUpdate({userName: req.account.userName}, 
+                            {$set: { imageUrl: req.file.originalname}}, {new: true}, function(err, account){
+                              if (err){
+                                let responseClient = jsonGenerator.status.error();
+                                return res.status(400).json(responseClient);
+                              }
+                              else {
+                                let filename = req.file.originalname;
+                                let message  = "http://loacalhost:3000/" +  path.resolve(__dirname, `../Uploads/${filename}`);
+                                return res.status(200).json({success: true, message});
+                              }
+                            })
+};
 
+exports.getAvatar = function(req,res){
+  let filename = req.params.name;
+  if (!filename){
+    let responseClient = jsonGenerator.status.error();
+    return res.status(401).json(responseClient);
+  }
+  let message = path.resolve(__dirname, `../Uploads/${filename}`);
+  return res.status(200).json({message});
+}
+
+exports.upgradeRole = function(req, res){
+  let role = req.account.role;
+  if (role === "Admin"){
+    account.findOneAndUpdate({userName: req.body.userupgrade}, {$set: {role: 'Nhanvien'}}, {new: true}, function(err, account){
+      if (err){
+        let responseClient = jsonGenerator.status.error();
+        return res.status(400).json(responseClient);
+      }
+      else {
+        let responseClient = jsonGenerator.status.success(200, "Upgrade role succeeded");
+        return res.status(200).json(responseClient);
+      }
+    });
+  }
+  else {
+    let responseClient = jsonGenerator.status.failure(401, "You need to sign in with Admin account");
+    return res.status(401).json(responseClient);
+  }
+}
