@@ -22,6 +22,6 @@
     "passport": "^0.4.0",
     "path": "^0.12.7",
     "routes": "^2.1.0",
-    "validator": "^11.1.0"
+    "validator": "^13.7.0"
   }
 }
